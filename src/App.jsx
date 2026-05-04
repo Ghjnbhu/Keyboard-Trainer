@@ -555,6 +555,14 @@ const App = () => {
       color: #D1D5DB;
       text-align: center;
     }
+    
+    /* FIX: Remove top padding on mobile for all screens */
+    @media (max-width: 768px) {
+      .setup-screen, .gameover-screen, .game-screen {
+        align-items: flex-start !important;
+        padding-top: 2px !important;
+      }
+    }
   `;
 
   const inputStyle = `
@@ -568,14 +576,13 @@ const App = () => {
   `;
 
   return (
-    // Removed p-6 class to eliminate extra padding
-    <div className="w-full min-h-screen flex flex-col items-center">
+    <div className="w-full min-h-screen flex flex-col items-center p-6">
       <style>{animationStyle}</style>
       <style>{inputStyle}</style>
 
-      {/* SETUP SCREEN - with minimum 2px top padding */}
+      {/* SETUP SCREEN */}
       {!isPlaying && !showGameOver && (
-        <div className="flex items-center justify-center min-h-screen" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
+        <div className="flex items-center justify-center min-h-screen setup-screen" style={{ paddingTop: '2px' }}>
           <div style={{ width: '500px', maxWidth: '90vw' }} className="bg-gray-800 rounded-lg border border-gray-700 shadow-xl">
             <div style={{ padding: '0.5rem 2.5rem 1.5rem 2.5rem' }}>
               <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }} className="font-bold text-white text-center">Keyboard Trainer</h1>
@@ -625,9 +632,9 @@ const App = () => {
         </div>
       )}
 
-      {/* GAME OVER SCREEN - with minimum 2px top padding */}
+      {/* GAME OVER SCREEN */}
       {showGameOver && (
-        <div className="flex items-center justify-center min-h-screen" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
+        <div className="flex items-center justify-center min-h-screen gameover-screen" style={{ paddingTop: '2px' }}>
           <div style={{ width: '500px', maxWidth: '90vw', backgroundColor: '#1f2937', borderRadius: '0.5rem', border: '1px solid #374151', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }} className="shadow-xl text-center">
             <div style={{ padding: '1rem 2rem 1.25rem 2rem' }}>
               <h1 style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }} className="font-bold text-gray-100">
@@ -658,10 +665,9 @@ const App = () => {
         </div>
       )}
 
-      {/* ACTIVE GAME - with minimum 2px top padding */}
+      {/* ACTIVE GAME */}
       {isPlaying && (
-        <div className="flex flex-col items-center justify-center min-h-screen" style={{ padding: '2px' }}>
-          {/* Stats Bar - Responsive */}
+        <div className="flex flex-col items-center justify-center min-h-screen game-screen" style={{ padding: '2px' }}>
           <div style={{ 
             width: '100%', 
             maxWidth: '500px', 
@@ -678,7 +684,6 @@ const App = () => {
             <span className="font-bold text-gray-200 text-sm md:text-base">⚠️ <span className="text-red-400">{wrongPresses}</span></span>
           </div>
           
-          {/* Canvas - Responsive border and sizing */}
           <div className="flex justify-center items-center w-full">
             <canvas 
               ref={canvasRef} 
@@ -696,7 +701,6 @@ const App = () => {
             />
           </div>
           
-          {/* Instruction Text */}
           <p 
             ref={instructionRef} 
             style={{ 
@@ -711,7 +715,6 @@ const App = () => {
             Press the falling key before it reaches the bottom!
           </p>
           
-          {/* Voice Info */}
           {speechSupported && (
             <div className="text-xs text-gray-400 mt-2 flex items-center gap-2">
               <span>🇬🇧</span>

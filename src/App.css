@@ -181,7 +181,12 @@
     right: 0;
     border-right-color: var(--border);
   }
-
+@media (max-width: 768px) {
+  .setup-screen, .gameover-screen, .game-screen {
+    align-items: flex-start !important;
+    padding-top: 2px !important;
+  }
+}
   
 
 }
