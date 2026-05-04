@@ -21,6 +21,10 @@ const App = () => {
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const [isSpawning, setIsSpawning] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
+  
+  // Responsive canvas size state
+  const [canvasDisplaySize, setCanvasDisplaySize] = useState(400);
+  
   const isEdge = useMemo(() => typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('edg'), []);
 
   // Game elements
@@ -33,6 +37,24 @@ const App = () => {
   const isSpawningRef = useRef(false);
   const timeOverRef = useRef(false);
   const prevKeyRef = useRef(null);
+
+  // Handle window resize for responsive canvas
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width <= 480) {
+        setCanvasDisplaySize(280);
+      } else if (width <= 768) {
+        setCanvasDisplaySize(320);
+      } else {
+        setCanvasDisplaySize(400);
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Keys depend on level
   const keys = useMemo(() => {
@@ -553,7 +575,7 @@ const App = () => {
       {/* SETUP SCREEN */}
       {!isPlaying && !showGameOver && (
         <div className="flex items-center justify-center min-h-screen">
-          <div style={{ width: '500px' }} className="bg-gray-800 rounded-lg border border-gray-700 shadow-xl">
+          <div style={{ width: '500px', maxWidth: '90vw' }} className="bg-gray-800 rounded-lg border border-gray-700 shadow-xl">
             <div style={{ padding: '0.5rem 2.5rem 1.5rem 2.5rem' }}>
               <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }} className="font-bold text-white text-center">Keyboard Trainer</h1>
               <div className="level-selector">
@@ -594,7 +616,7 @@ const App = () => {
                 <button onClick={() => handleDurationChange('increase')} className="duration-arrow"><div className="triangle-right"></div></button>
               </div>
               <div className="text-center">
-                <button onClick={startGame} style={{ padding: '0.5rem 0', fontSize: '1.5rem', borderRadius: '0.5rem', width: '250px' }} className="bg-amber-500 text-black font-bold hover:bg-amber-600 transition-all animate-button">START</button>
+                <button onClick={startGame} style={{ padding: '0.5rem 0', fontSize: '1.5rem', borderRadius: '0.5rem', width: '250px', maxWidth: '100%' }} className="bg-amber-500 text-black font-bold hover:bg-amber-600 transition-all animate-button">START</button>
               </div>
               <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '14px', color: '#FFFFFF' }}>Version 2.0 Build by Victor Bogatyrev for my daughter Mira</div>
             </div>
@@ -605,7 +627,7 @@ const App = () => {
       {/* GAME OVER SCREEN */}
       {showGameOver && (
         <div className="flex items-center justify-center min-h-screen">
-          <div style={{ width: '500px', backgroundColor: '#1f2937', borderRadius: '0.5rem', border: '1px solid #374151', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }} className="shadow-xl text-center">
+          <div style={{ width: '500px', maxWidth: '90vw', backgroundColor: '#1f2937', borderRadius: '0.5rem', border: '1px solid #374151', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }} className="shadow-xl text-center">
             <div style={{ padding: '1rem 2rem 1.25rem 2rem' }}>
               <h1 style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }} className="font-bold text-gray-100">
                 ✨ Exercise Complete! ✨
@@ -635,21 +657,66 @@ const App = () => {
         </div>
       )}
 
-      {/* ACTIVE GAME */}
+      {/* ACTIVE GAME - FULLY RESPONSIVE WITH PROPER BORDER SIZING */}
       {isPlaying && (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <div style={{ width: '500px', marginBottom: '1.5rem', padding: '1.25rem', borderRadius: '0.5rem' }} className="bg-gray-800 border border-gray-700 flex justify-around">
-            <span className="font-bold text-gray-200">⏱️ <span className="text-blue-400">{timeLeft}s</span></span>
-            <span className="font-bold text-gray-200">🎯 <span className="text-green-400">{score}</span></span>
-            <span className="font-bold text-gray-200">❌ <span className="text-red-400">{misses}</span></span>
-            <span className="font-bold text-gray-200">⚠️ <span className="text-red-400">{wrongPresses}</span></span>
+        <div className="flex flex-col items-center justify-center min-h-screen" style={{ padding: '16px' }}>
+          {/* Stats Bar - Responsive */}
+          <div style={{ 
+            width: '100%', 
+            maxWidth: '500px', 
+            marginBottom: '1rem', 
+            padding: '12px 16px', 
+            borderRadius: '0.5rem',
+            backgroundColor: '#1f2937',
+            border: '1px solid #374151'
+          }} 
+          className="flex justify-around flex-wrap gap-2">
+            <span className="font-bold text-gray-200 text-sm md:text-base">⏱️ <span className="text-blue-400">{timeLeft}s</span></span>
+            <span className="font-bold text-gray-200 text-sm md:text-base">🎯 <span className="text-green-400">{score}</span></span>
+            <span className="font-bold text-gray-200 text-sm md:text-base">❌ <span className="text-red-400">{misses}</span></span>
+            <span className="font-bold text-gray-200 text-sm md:text-base">⚠️ <span className="text-red-400">{wrongPresses}</span></span>
           </div>
-          <canvas ref={canvasRef} width={400} height={400} style={{ border: '4px solid yellow', borderRadius: '0.5rem' }} className="bg-black" />
-          <p ref={instructionRef} style={{ width: '500px', padding: '2rem 0', fontSize: '1.125rem' }} className="text-center text-gray-300 font-bold">Press the falling key before it reaches the bottom!</p>
+          
+          {/* Canvas - Responsive border and sizing */}
+          <div className="flex justify-center items-center w-full">
+            <canvas 
+              ref={canvasRef} 
+              width={400} 
+              height={400} 
+              style={{ 
+                border: '4px solid yellow', 
+                borderRadius: '0.5rem',
+                width: `${canvasDisplaySize}px`,
+                height: `${canvasDisplaySize}px`,
+                maxWidth: '90vw',
+                maxHeight: '90vw'
+              }} 
+              className="bg-black" 
+            />
+          </div>
+          
+          {/* Instruction Text */}
+          <p 
+            ref={instructionRef} 
+            style={{ 
+              width: '100%', 
+              maxWidth: '500px', 
+              padding: '1rem', 
+              fontSize: 'clamp(14px, 4vw, 18px)',
+              marginTop: '1rem'
+            }} 
+            className="text-center text-gray-300 font-bold"
+          >
+            Press the falling key before it reaches the bottom!
+          </p>
+          
+          {/* Voice Info */}
           {speechSupported && (
             <div className="text-xs text-gray-400 mt-2 flex items-center gap-2">
               <span>🇬🇧</span>
-              <span style={{ fontSize: '10px' }} className={voiceGender === 'female' ? 'text-pink-400' : 'text-blue-400'}>{useFallback ? 'Device TTS' : currentVoiceName}</span>
+              <span style={{ fontSize: '10px' }} className={voiceGender === 'female' ? 'text-pink-400' : 'text-blue-400'}>
+                {useFallback ? 'Device TTS' : currentVoiceName}
+              </span>
             </div>
           )}
         </div>
