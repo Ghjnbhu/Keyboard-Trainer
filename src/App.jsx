@@ -572,9 +572,9 @@ const App = () => {
       <style>{animationStyle}</style>
       <style>{inputStyle}</style>
 
-      {/* SETUP SCREEN - with minimum 2px top padding */}
+      {/* SETUP SCREEN - with minimum top padding */}
       {!isPlaying && !showGameOver && (
-        <div className="flex items-center justify-center min-h-screen" style={{ paddingTop: '2px' }}>
+        <div className="flex items-center justify-center min-h-screen" style={{ paddingTop: 'max(20px, env(safe-area-inset-top))' }}>
           <div style={{ width: '500px', maxWidth: '90vw' }} className="bg-gray-800 rounded-lg border border-gray-700 shadow-xl">
             <div style={{ padding: '0.5rem 2.5rem 1.5rem 2.5rem' }}>
               <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }} className="font-bold text-white text-center">Keyboard Trainer</h1>
@@ -624,9 +624,9 @@ const App = () => {
         </div>
       )}
 
-      {/* GAME OVER SCREEN - with minimum 2px top padding */}
+      {/* GAME OVER SCREEN - with minimum top padding */}
       {showGameOver && (
-        <div className="flex items-center justify-center min-h-screen" style={{ paddingTop: '2px' }}>
+        <div className="flex items-center justify-center min-h-screen" style={{ paddingTop: 'max(20px, env(safe-area-inset-top))' }}>
           <div style={{ width: '500px', maxWidth: '90vw', backgroundColor: '#1f2937', borderRadius: '0.5rem', border: '1px solid #374151', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }} className="shadow-xl text-center">
             <div style={{ padding: '1rem 2rem 1.25rem 2rem' }}>
               <h1 style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }} className="font-bold text-gray-100">
@@ -657,9 +657,9 @@ const App = () => {
         </div>
       )}
 
-      {/* ACTIVE GAME - with minimum 2px top padding */}
+      {/* ACTIVE GAME - with minimum top padding */}
       {isPlaying && (
-        <div className="flex flex-col items-center justify-center min-h-screen" style={{ padding: '2px' }}>
+        <div className="flex flex-col items-center justify-center min-h-screen" style={{ padding: '16px', paddingTop: 'max(20px, env(safe-area-inset-top))' }}>
           {/* Stats Bar - Responsive */}
           <div style={{ 
             width: '100%', 
