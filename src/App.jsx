@@ -21,7 +21,6 @@ const App = () => {
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const [isSpawning, setIsSpawning] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
-  const [maleFallback, setMaleFallback] = useState(false);
   const isEdge = useMemo(() => typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('edg'), []);
 
   // Game elements
@@ -33,27 +32,26 @@ const App = () => {
   const isGameActiveRef = useRef(false);
   const isSpawningRef = useRef(false);
   const timeOverRef = useRef(false);
-  const prevKeyRef = useRef(null); // store last spawned character to avoid repetition
+  const prevKeyRef = useRef(null);
 
-  // Keys depend on level (1: letters, 2: letters+digits, 3: letters+digits+symbols, 4: only symbols)
+  // Keys depend on level
   const keys = useMemo(() => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    if (level === 1) {
-      return letters;
-    } else if (level === 2) {
+    if (level === 1) return letters;
+    if (level === 2) {
       const digits = '0123456789'.split('');
       return [...letters, ...digits];
-    } else if (level === 3) {
+    }
+    if (level === 3) {
       const digits = '0123456789'.split('');
       const symbols = '~!@#$%^&*()_+'.split('');
       return [...letters, ...digits, ...symbols];
-    } else { // level === 4
-      const symbols = '~!@#$%^&*()_+'.split('');
-      return symbols;
     }
+    // level === 4
+    const symbols = '~!@#$%^&*()_+'.split('');
+    return symbols;
   }, [level]);
 
-  // Symbol pronunciation mapping (consistent across browsers)
   const symbolToWord = useMemo(() => ({
     '~': 'tilde',
     '!': 'exclamation mark',
@@ -74,10 +72,9 @@ const App = () => {
   const femaleVoiceRef = useRef(null);
   const maleVoiceRef = useRef(null);
 
-  // Detect browser and check speech support
+  // Detect browser and speech support
   useEffect(() => {
     if (!synth) {
-      console.log('⚠️ Speech synthesis not supported');
       setSpeechSupported(false);
       setUseFallback(false);
       setCurrentVoiceName('Speech not available');
@@ -88,17 +85,26 @@ const App = () => {
     const ua = navigator.userAgent.toLowerCase();
     const isAndroid = ua.includes('android');
     const isOpera = ua.includes('opr') || ua.includes('opera');
-    const isEdge = ua.includes('edg') || ua.includes('edge');
-    
-    if (isAndroid && (isOpera || isEdge)) {
-      console.log('⚠️ Detected Android browser with limited speech support - using fallback mode');
+    const isEdgeBrowser = ua.includes('edg') || ua.includes('edge');
+
+    // Force fallback for Edge on any OS (Windows, Mac, Android)
+    if (isEdgeBrowser) {
+      console.log('⚠️ Edge browser detected - using fallback TTS mode');
+      setUseFallback(true);
+      setCurrentVoiceName('Using device TTS (Edge fallback)');
+      setVoicesLoaded(true);
+      return;
+    }
+
+    if (isAndroid && (isOpera || isEdgeBrowser)) {
+      console.log('⚠️ Android + Opera/Edge - using fallback mode');
       setUseFallback(true);
       setCurrentVoiceName('Using device TTS');
       setVoicesLoaded(true);
     }
   }, [synth]);
 
-  // Pre-warm speech synthesis
+  // Pre-warm speech synthesis (only when not using fallback)
   useEffect(() => {
     if (!useFallback && synth && speechSupported) {
       try {
@@ -106,9 +112,7 @@ const App = () => {
         warmupUtterance.volume = 0;
         synth.speak(warmupUtterance);
         setTimeout(() => {
-          if (synth.speaking) {
-            synth.cancel();
-          }
+          if (synth.speaking) synth.cancel();
         }, 50);
       } catch (e) {
         console.log('⚠️ Speech warmup failed:', e);
@@ -116,7 +120,7 @@ const App = () => {
     }
   }, [synth, useFallback, speechSupported]);
 
-  // Load available voices
+  // Load voices (only if not fallback)
   useEffect(() => {
     if (useFallback || !speechSupported || !synth) {
       setVoicesLoaded(true);
@@ -126,13 +130,7 @@ const App = () => {
     const loadVoices = () => {
       try {
         const voices = synth.getVoices();
-        console.log('=== ALL AVAILABLE VOICES ===');
-        voices.forEach((voice, index) => {
-          console.log(`${index + 1}. Name: "${voice.name}", Lang: ${voice.lang}`);
-        });
-
         if (voices.length === 0) {
-          console.log('⚠️ No voices found - switching to fallback mode');
           setUseFallback(true);
           setCurrentVoiceName('Using device TTS (fallback)');
           setVoicesLoaded(true);
@@ -144,29 +142,25 @@ const App = () => {
 
         voices.forEach(voice => {
           const name = voice.name.toLowerCase();
-          if (name.includes('samantha') || name.includes('victoria') || name.includes('zira') || 
+          if (name.includes('samantha') || name.includes('victoria') || name.includes('zira') ||
               name.includes('hazel') || name.includes('helena') || name.includes('sara') ||
               name.includes('moira') || name.includes('tessa') || name.includes('kate') ||
               name.includes('emma') || name.includes('lucy') || name.includes('susie') ||
               name.includes('female') || name.includes('girl') || name.includes('woman')) {
             femaleList.push(voice);
-          }
-          else if (name.includes('david') || name.includes('george') || name.includes('daniel') ||
-                   name.includes('alex') || name.includes('richard') || name.includes('oliver') ||
-                   name.includes('harry') || name.includes('james') || name.includes('william') ||
-                   name.includes('henry') || name.includes('thomas') || name.includes('charles') ||
-                   name.includes('edward') || name.includes('patrick') || name.includes('michael') ||
-                   name.includes('john') || name.includes('robert') || name.includes('christopher') ||
-                   name.includes('matthew') || name.includes('andrew') || name.includes('joseph') ||
-                   name.includes('kevin') || name.includes('brian') || name.includes('steven') ||
-                   name.includes('paul') || name.includes('mark') || name.includes('peter') ||
-                   name.includes('male') || name.includes('guy') || name.includes('man')) {
+          } else if (name.includes('david') || name.includes('george') || name.includes('daniel') ||
+                     name.includes('alex') || name.includes('richard') || name.includes('oliver') ||
+                     name.includes('harry') || name.includes('james') || name.includes('william') ||
+                     name.includes('henry') || name.includes('thomas') || name.includes('charles') ||
+                     name.includes('edward') || name.includes('patrick') || name.includes('michael') ||
+                     name.includes('john') || name.includes('robert') || name.includes('christopher') ||
+                     name.includes('matthew') || name.includes('andrew') || name.includes('joseph') ||
+                     name.includes('kevin') || name.includes('brian') || name.includes('steven') ||
+                     name.includes('paul') || name.includes('mark') || name.includes('peter') ||
+                     name.includes('male') || name.includes('guy') || name.includes('man')) {
             maleList.push(voice);
           }
         });
-
-        console.log('🎯 Female voices found:', femaleList.length);
-        console.log('🎯 Male voices found:', maleList.length);
 
         setAvailableVoices({ female: femaleList, male: maleList });
 
@@ -182,12 +176,10 @@ const App = () => {
 
         femaleVoiceRef.current = selectVoice(femaleList);
         maleVoiceRef.current = selectVoice(maleList);
-
         setHasFemaleVoice(!!femaleVoiceRef.current);
         setHasMaleVoice(!!maleVoiceRef.current);
 
         if (!maleVoiceRef.current && voices.length > 0) {
-          console.log('⚠️ No male voice found, using first available voice as fallback');
           maleVoiceRef.current = voices.find(v => !femaleList.includes(v)) || voices[0];
           setHasMaleVoice(!!maleVoiceRef.current);
         }
@@ -197,10 +189,8 @@ const App = () => {
             setCurrentVoiceName(femaleVoiceRef.current.name);
           } else if (voiceGender === 'male' && maleVoiceRef.current) {
             setCurrentVoiceName(maleVoiceRef.current.name);
-          } else if (voiceGender === 'female' && !femaleVoiceRef.current) {
-            setCurrentVoiceName('Female voice unavailable');
-          } else if (voiceGender === 'male' && !maleVoiceRef.current) {
-            setCurrentVoiceName('Male voice unavailable');
+          } else {
+            setCurrentVoiceName('Voice unavailable');
           }
         };
         updateCurrentVoiceName();
@@ -214,11 +204,9 @@ const App = () => {
     };
 
     loadVoices();
-
     if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
-
     return () => {
       if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
         window.speechSynthesis.onvoiceschanged = null;
@@ -226,7 +214,7 @@ const App = () => {
     };
   }, [synth, voiceGender, useFallback, speechSupported]);
 
-  // Update voice name when gender changes
+  // Update voice name on gender change
   useEffect(() => {
     if (useFallback || !speechSupported) return;
     if (voiceGender === 'female' && femaleVoiceRef.current) {
@@ -241,17 +229,8 @@ const App = () => {
     try {
       if (synth.speaking) synth.cancel();
       const utterance = new SpeechSynthesisUtterance(word);
-      
-      if (isEdge && gender === 'male' && !useFallback) {
-        utterance.pitch = 0.9;
-        utterance.rate = 0.9;
-        utterance.volume = 1;
-        utterance.lang = 'en-GB';
-        synth.speak(utterance);
-        console.log(`🔊 Edge fallback TTS for male: "${word}"`);
-        return;
-      }
-      
+
+      // Fallback mode (Edge or other limited browsers)
       if (useFallback) {
         utterance.pitch = gender === 'female' ? 1.1 : 0.9;
         utterance.rate = 0.9;
@@ -261,26 +240,23 @@ const App = () => {
         console.log(`🔊 Fallback TTS: "${word}" (${gender})`);
         return;
       }
-      
+
       let selectedVoice = null;
       if (gender === 'female' && femaleVoiceRef.current) {
         selectedVoice = femaleVoiceRef.current;
         utterance.pitch = 1.1;
-        console.log(`🔊 Using female voice: ${selectedVoice.name}`);
       } else if (gender === 'male' && maleVoiceRef.current) {
         selectedVoice = maleVoiceRef.current;
         utterance.pitch = 0.9;
-        console.log(`🔊 Using male voice: ${selectedVoice.name}`);
       } else {
         utterance.pitch = gender === 'female' ? 1.1 : 0.9;
         utterance.rate = 0.9;
         utterance.volume = 1;
         utterance.lang = 'en-GB';
         synth.speak(utterance);
-        console.log(`🔊 No specific voice, using default with pitch ${utterance.pitch}`);
         return;
       }
-      
+
       utterance.voice = selectedVoice;
       utterance.rate = 0.9;
       utterance.volume = 1;
@@ -289,18 +265,14 @@ const App = () => {
     } catch (error) {
       console.error('Speech error:', error);
     }
-  }, [synth, useFallback, speechSupported, isEdge]);
+  }, [synth, useFallback, speechSupported]);
 
-  // Convert character to spoken text: digits become words, symbols become mapped words
   const getSpokenText = useCallback((char) => {
     if (char >= '0' && char <= '9') {
       const digitWords = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
       return digitWords[parseInt(char, 10)];
     }
-    if (symbolToWord[char]) {
-      return symbolToWord[char];
-    }
-    return char;
+    return symbolToWord[char] || char;
   }, [symbolToWord]);
 
   const speakLetter = useCallback((char) => {
@@ -311,12 +283,12 @@ const App = () => {
 
   const handleVoiceChange = useCallback((gender) => {
     setVoiceGender(gender);
-    if (voicesLoaded && speechSupported) {
+    if (voicesLoaded && speechSupported && !useFallback) {
       setTimeout(() => {
         speakWord(gender === 'female' ? 'Female voice' : 'Male voice', gender);
       }, 100);
     }
-  }, [speakWord, voicesLoaded, speechSupported]);
+  }, [speakWord, voicesLoaded, speechSupported, useFallback]);
 
   const handleSpeedChange = useCallback((newSpeed) => {
     setSpeed(newSpeed);
@@ -359,8 +331,7 @@ const App = () => {
     if (isSpawningRef.current || timeOverRef.current || !isGameActiveRef.current) return;
     isSpawningRef.current = true;
     setIsSpawning(true);
-    
-    // Pick a random key different from the previous one (if possible)
+
     let randomKey;
     if (keys.length === 1) {
       randomKey = keys[0];
@@ -370,7 +341,7 @@ const App = () => {
       } while (randomKey === prevKeyRef.current);
     }
     prevKeyRef.current = randomKey;
-    
+
     if (speechSupported) speakLetter(randomKey);
     if (spawnTimeoutRef.current) clearTimeout(spawnTimeoutRef.current);
     spawnTimeoutRef.current = setTimeout(() => {
@@ -402,7 +373,7 @@ const App = () => {
     setMisses(0);
     setWrongPresses(0);
     setCurrentKey(null);
-    prevKeyRef.current = null; // reset previous key
+    prevKeyRef.current = null;
     spawnLetter();
   };
 
@@ -419,6 +390,7 @@ const App = () => {
     if (synth && synth.speaking) synth.cancel();
   }, [synth]);
 
+  // Timer effect
   useEffect(() => {
     if (!isPlaying) return;
     const timer = setInterval(() => {
@@ -435,6 +407,7 @@ const App = () => {
     return () => clearInterval(timer);
   }, [isPlaying, currentKey, endGame]);
 
+  // Animation loop
   useEffect(() => {
     if (!isPlaying) return;
     const canvas = canvasRef.current;
@@ -466,7 +439,7 @@ const App = () => {
     return () => cancelAnimationFrame(animationRef.current);
   }, [isPlaying, currentKey, spawnLetter, endGame]);
 
-  // Key press handler - ignore modifier keys
+  // Key press handler
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!isPlaying || !currentKey) return;
@@ -576,7 +549,7 @@ const App = () => {
     <div className="w-full min-h-screen flex flex-col items-center p-6">
       <style>{animationStyle}</style>
       <style>{inputStyle}</style>
-      
+
       {/* SETUP SCREEN */}
       {!isPlaying && !showGameOver && (
         <div className="flex items-center justify-center min-h-screen">
@@ -629,21 +602,14 @@ const App = () => {
         </div>
       )}
 
-      {/* DARK THEME GAME OVER SCREEN WITH COLORED SYMBOLS */}
+      {/* GAME OVER SCREEN */}
       {showGameOver && (
         <div className="flex items-center justify-center min-h-screen">
-          <div style={{ 
-            width: '500px', 
-            backgroundColor: '#1f2937',
-            borderRadius: '0.5rem',
-            border: '1px solid #374151',
-            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)'
-          }} className="shadow-xl text-center">
+          <div style={{ width: '500px', backgroundColor: '#1f2937', borderRadius: '0.5rem', border: '1px solid #374151', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }} className="shadow-xl text-center">
             <div style={{ padding: '1rem 2rem 1.25rem 2rem' }}>
               <h1 style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }} className="font-bold text-gray-100">
                 ✨ Exercise Complete! ✨
               </h1>
-
               <div className="grid grid-cols-2 gap-2 mb-3" style={{ maxWidth: '450px', margin: '0 auto' }}>
                 <div className="p-2 bg-gray-900 rounded-lg border border-gray-700">
                   <p className="text-gray-400 text-xs font-bold uppercase mb-0.5">🏆 Score</p>
@@ -662,31 +628,8 @@ const App = () => {
                   <p style={{ fontSize: '2rem' }} className="font-bold text-blue-400">{accuracy}%</p>
                 </div>
               </div>
-
-              <button
-                onClick={startGame}
-                style={{ 
-                  padding: '0.5rem 0', 
-                  fontSize: '1.125rem', 
-                  borderRadius: '0.5rem',
-                  backgroundColor: '#d97706',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  boxShadow: '0 1px 3px 0 rgba(0,0,0,0.3)'
-                }}
-                className="w-full hover:bg-amber-600 transition-all animate-button"
-              >
-                🔁 Try Again
-              </button>
-              
-              <button
-                onClick={() => setShowGameOver(false)}
-                style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}
-                className="text-gray-400 font-bold hover:text-gray-200 transition-colors"
-              >
-                ← Back to Menu
-              </button>
+              <button onClick={startGame} style={{ padding: '0.5rem 0', fontSize: '1.125rem', borderRadius: '0.5rem', backgroundColor: '#d97706', color: 'white', fontWeight: 'bold', border: 'none', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.3)' }} className="w-full hover:bg-amber-600 transition-all animate-button">🔁 Try Again</button>
+              <button onClick={() => setShowGameOver(false)} style={{ marginTop: '0.5rem', fontSize: '0.875rem' }} className="text-gray-400 font-bold hover:text-gray-200 transition-colors">← Back to Menu</button>
             </div>
           </div>
         </div>
