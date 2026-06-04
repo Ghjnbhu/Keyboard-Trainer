@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const App = () => {
   // Game settings
@@ -725,6 +726,7 @@ const App = () => {
           )}
         </div>
       )}
+      <SpeedInsights />
     </div>
   );
 };
